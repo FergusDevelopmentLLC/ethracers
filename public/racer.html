@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Hackathon Racer</title>
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<style>
+
+body {
+  margin:0;
+}
+
+#map {
+  width: 100%;
+  height:100%;
+  position: absolute;
+}
+
+.leaflet-control-attribution.leaflet-control {
+  display: none;
+}
+
+
+</style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <script>
+
+      var options = {
+        center: [0, 0],
+        zoom: 0,
+        scrollWheelZoom: true,
+        zoomSnap: .1,
+        dragging: true,
+        zoomControl: false
+      }
+
+      var denver_maxBounds = [
+        [39.65, -105], //Southwest
+        [39.754342, -104.84]  //Northeast
+      ];
+      var denver_init_lat = 39.6964600;
+      var denver_init_lng = -104.9220400;
+      var denver_icon = 'data/buffalocorn.png';
+      var denver_color = 'red';
+      var denver_marker_width = 60;
+      var denver_marker_height = 65;
+      var denver_racer_name = "ETHDenver";
+      var denver_position = "#1";
+      var denver_current = "01:59";
+
+      var chicago_maxBounds = [
+        [41.81, -87.65], //Southwest
+        [42, -87.5744]  //Northeast
+      ];
+      var chicago_init_lat = 41.987376;
+      var chicago_init_lng = -87.654307;
+      var chicago_icon = 'data/unicorn.png';
+      var chicago_color = 'green';
+      var chicago_marker_width = 60;
+      var chicago_marker_height = 75;
+      var chicago_racer_name = "Unicorn";
+      var chicago_position = "#3";
+      var chicago_current = "01:59";
+
+      var nyc_maxBounds = [
+        [40.699995, -74.026856], //Southwest
+        [40.8669860056,-73.9320144146]  //Northeast
+      ];
+      var nyc_init_lat = 40.7014270019;
+      var nyc_init_lng = -74.0140932798;
+      var nyc_icon = 'data/eth.png';
+      var nyc_color = '#4169e1';
+      var nyc_marker_width = 35;
+      var nyc_marker_height = 105;
+      var nyc_racer_name = "Ethereum";
+      var nyc_position = "#2";
+      var nyc_current = "01:59";
+
+      var racerId = gup("racerId");
+      var source_rest = "/racers/" + racerId;
+      var source_json = "data/" + racerId + ".geojson";
+
+      if (racerId == 'denver') {
+        var lat = denver_init_lat;
+        var lng = denver_init_lng;
+        var icon = denver_icon;
+        var maxBounds = denver_maxBounds;
+        var color = denver_color;
+        var marker_width = denver_marker_width;
+        var marker_height = denver_marker_height;
+      }
+
+      if (racerId == 'chicago') {
+        var lat = chicago_init_lat;
+        var lng = chicago_init_lng;
+        var icon = chicago_icon;
+        var maxBounds = chicago_maxBounds;
+        var color = chicago_color;
+        var marker_width = chicago_marker_width;
+        var marker_height = chicago_marker_height;
+      }
+
+      if (racerId == 'nyc') {
+        var lat = nyc_init_lat;
+        var lng = nyc_init_lng;
+        var icon = nyc_icon;
+        var maxBounds = nyc_maxBounds;
+        var color = nyc_color;
+        var marker_width = nyc_marker_width;
+        var marker_height = nyc_marker_height;
+      }
+
+      var map = L.map('map', options).fitBounds(maxBounds);
+      //L.tileLayer('https://{s}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=deaaab6cdfdd412289bde59106dab834', {
+      //L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      //attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      //L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
+      L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
+        attribution: ''
+      }).addTo(map);
+
+      var ic = L.icon({
+          iconUrl: icon,
+          iconSize: [marker_width, marker_height]
+          });
+
+      var marker = L.marker([lat, lng], {
+        icon: ic
+      }).addTo(map);
+
+      var zoomed = false;
+
+      setTimeout(zoom, 3000);
+
+      function updateMap(){
+        axios.get(source_rest)
+          .then(function (response) {
+
+            lat = response.data.Position.lat;
+            lng = response.data.Position.lng;
+
+            percent = response.data.i;
+            percent = percent / 8098;
+
+            //console.log(response.data.barId);
+
+            //window.parent.document.getElementById('bar' + response.data.barId).width = percent;
+            window.parent.resizeBar('bar' + response.data.barId, percent);
+
+            //console.log(percent / 8098);
+
+            marker.setLatLng([lat, lng]).update();
+
+            if(zoomed) {
+              map.panTo(new L.LatLng(lat, lng));
+            }
+
+            setTimeout(updateMap, 500);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+
+      var routeStyle = {
+        "color": color,
+        "weight": 6,
+        "opacity": 0.4
+      };
+
+      axios.get(source_json)
+        .then(function (response) {
+          L.geoJson(response.data, {
+            style: routeStyle
+          }).addTo(map);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+
+      updateMap();
+
+      function gup( name, url ) {
+        if (!url) url = location.href;
+        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+        var regexS = "[\\?&]"+name+"=([^&#]*)";
+        var regex = new RegExp( regexS );
+        var results = regex.exec( url );
+        return results == null ? null : results[1];
+      }
+
+      function zoom() {
+        if(zoomed){
+          map.fitBounds(maxBounds);
+          zoomed = false;
+        }
+        else {
+          map.setZoom(16);
+          zoomed = true;
+        }
+        setTimeout(zoom, 8000);
+      }
+
+  </script>
+</body>
+</html>
