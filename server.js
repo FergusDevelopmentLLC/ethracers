@@ -6,15 +6,6 @@ const path = require('path');
 const helmet = require('helmet');
 const logger = require('morgan');
 
-const firebase = require("firebase");
-var config = {
-  apiKey: "AIzaSyD2cj5V_-Ap9LsDOn1--9L5XKiiZkcSa-w",
-  authDomain: "plugdj-v1.firebaseapp.com",
-  databaseURL: "https://plugdj-v1.firebaseio.com",
-  storageBucket: ""
-};
-firebase.initializeApp(config);
-
 const app = express();
 app.use(express.static(__dirname + "/public")); //allows serving of static files in public folder
 app.use(express.static(__dirname + "/node_modules")); //allows serving of installed npm modules to front end

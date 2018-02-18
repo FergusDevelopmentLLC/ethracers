@@ -1,5 +1,4 @@
 var fs = require('fs');
-var gt = require('geojson-tools');
 
 module.exports = {
 
